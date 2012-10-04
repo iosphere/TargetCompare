@@ -21,4 +21,5 @@
 @property (weak) IBOutlet NSImageView *imageView;
 
 - (void)compareLeftTarget:(XCTarget*)targetLeft withRightTarget:(XCTarget*)targetRight;
+- (void)checkSanityForProject:(XCProject *)aProject;
 @end

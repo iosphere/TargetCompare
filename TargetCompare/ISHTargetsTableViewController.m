@@ -110,15 +110,17 @@ NSString const *kUserDefaultsPathKey = @"ISHUserDefaultsPathKey";
 }
 
 - (IBAction)startComparison:(id)sender {
-    
-    NSInteger selectedIndexLeft = [self.targetsTableViewLeft selectedRow];
     NSInteger selectedIndexRight = [self.targetsTableViewRight selectedRow];
-    
-    XCTarget *targetLeft = [self targetAtIndex:selectedIndexLeft];
+
     XCTarget *targetRight = [self targetAtIndex:selectedIndexRight];
-    
-    
-    [self.targetComparisonController compareLeftTarget:targetLeft withRightTarget:targetRight];
+
+    [self.targetComparisonController compareLeftTarget:[self selectedLeftTarget] withRightTarget:targetRight];
+}
+
+- (IBAction)startSanityCheck:(id)sender {
+    [sender setEnabled:NO];
+    [self.targetComparisonController checkSanityForProject:self.project];
+    [sender setEnabled:YES];
 }
 
 - (XCTarget*)targetAtIndex:(NSUInteger)index {
@@ -127,6 +129,12 @@ NSString const *kUserDefaultsPathKey = @"ISHUserDefaultsPathKey";
     }
     
     return [self.project.targets objectAtIndex:index];
+}
+
+- (XCTarget *)selectedLeftTarget {
+    NSInteger selectedIndexLeft = [self.targetsTableViewLeft selectedRow];
+
+    return [self targetAtIndex:selectedIndexLeft];
 }
 
 @end
