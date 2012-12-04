@@ -21,7 +21,10 @@
 @property (weak) IBOutlet NSTableView *targetsTableViewRight;
 
 @property (weak) IBOutlet NSButton *startComparisonButton;
+@property (weak) IBOutlet NSButtonCell *startSanityCheckButton;
+
 - (IBAction)startComparison:(id)sender;
+- (IBAction)startSanityCheck:(id)sender;
 
 @property (strong) IBOutlet ISHTargetsComparisonController *targetComparisonController;
 @end

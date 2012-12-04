@@ -8,6 +8,7 @@
 
 #import "ISHTargetsTableViewController.h"
 #import <XcodeEditor/XCProject.h>
+#import <XcodeEditor/XCSourceFile.h>
 
 NSString const *kUserDefaultsPathKey = @"ISHUserDefaultsPathKey";
 
@@ -110,16 +111,44 @@ NSString const *kUserDefaultsPathKey = @"ISHUserDefaultsPathKey";
 }
 
 - (IBAction)startComparison:(id)sender {
-    
+
     NSInteger selectedIndexLeft = [self.targetsTableViewLeft selectedRow];
     NSInteger selectedIndexRight = [self.targetsTableViewRight selectedRow];
-    
+
     XCTarget *targetLeft = [self targetAtIndex:selectedIndexLeft];
     XCTarget *targetRight = [self targetAtIndex:selectedIndexRight];
-    
-    
+
+
     [self setTargetComparisonController:[[ISHTargetsComparisonController alloc] initWithLeftTarget:targetLeft rightTarget:targetRight]];
     [self.targetComparisonController showResults];
+}
+
+- (IBAction)startSanityCheck:(id)sender {
+    [sender setEnabled:NO];
+    [self checkSanityForProject:self.project];
+    [sender setEnabled:YES];
+}
+
+- (void)checkSanityForProject:(XCProject *)aProject {
+    NSArray *filesWithAbsolutePath = [aProject.files filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL (id evaluatedObject, NSDictionary * bindings) {
+        return [[(XCSourceFile *) evaluatedObject pathRelativeToProjectRoot] isAbsolutePath];
+    }]];
+
+    NSArray *fileNames = nil;
+
+    if ([XCSourceFile instancesRespondToSelector:@selector(name)]) {
+        fileNames = [filesWithAbsolutePath valueForKey:@"name"];
+    }
+
+    NSAlert *myAlert = nil;
+
+    if (filesWithAbsolutePath.count) {
+        myAlert = [NSAlert alertWithMessageText:@"Absolute paths in project" defaultButton:@"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:@"There are %lu files with absolute paths:\n%@", fileNames.count, [fileNames componentsJoinedByString:@"\n"]];
+    } else {
+        myAlert = [NSAlert alertWithMessageText:@"no absolute paths!" defaultButton:@"Cool" alternateButton:nil otherButton:nil informativeTextWithFormat:@"Yeehaa, looks good!"];
+    }
+
+    [myAlert runModal];
 }
 
 - (XCTarget*)targetAtIndex:(NSUInteger)index {
@@ -128,6 +157,12 @@ NSString const *kUserDefaultsPathKey = @"ISHUserDefaultsPathKey";
     }
     
     return [self.project.targets objectAtIndex:index];
+}
+
+- (XCTarget *)selectedLeftTarget {
+    NSInteger selectedIndexLeft = [self.targetsTableViewLeft selectedRow];
+
+    return [self targetAtIndex:selectedIndexLeft];
 }
 
 @end
