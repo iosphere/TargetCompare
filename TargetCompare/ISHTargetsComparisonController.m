@@ -7,14 +7,29 @@
 //
 
 #import "ISHTargetsComparisonController.h"
+#import <XcodeEditor/XCSourceFile.h>
+#import <XcodeEditor/XCProject.h>
 
 @interface ISHTargetsComparisonController ()
-@property (strong) NSArray *membersMissingInTargetLeft;
-@property (strong) NSArray *membersMissingInTargetRight;
+
 @end
 
 
 @implementation ISHTargetsComparisonController
++ (NSArray *)arrayWithAbolutePathsInProject:(XCProject *)proj {
+    NSArray *filesWithAbsolutePath = [proj.files filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL (id evaluatedObject, NSDictionary * bindings) {
+        return [[(XCSourceFile *) evaluatedObject pathRelativeToProjectRoot] isAbsolutePath];
+    }]];
+
+    NSArray *fileNames = nil;
+
+    if ([XCSourceFile instancesRespondToSelector:@selector(name)]) {
+        fileNames = [filesWithAbsolutePath valueForKey:@"name"];
+    }
+
+    return fileNames;
+}
+
 - (id)initWithLeftTarget:(XCTarget *)leftTarget rightTarget:(XCTarget *)rightTarget {
     self = [super initWithWindowNibName:@"ISHTargetsComparisonController"];
 
@@ -39,6 +54,10 @@
 }
 
 - (void)windowDidLoad {
+    [self startComparsion];
+}
+
+- (void)startComparsion {
     [[self leftTargetTitle] setTitleWithMnemonic:self.targetLeft.name];
     [[self rightTargetTitle] setTitleWithMnemonic:self.targetRight.name];
     
@@ -62,7 +81,6 @@
     
     [self setMembersMissingInTargetLeft:[membersMissingInLeft.allObjects sortedArrayUsingSelector:@selector(compare:)]];
     [self setMembersMissingInTargetRight:[membersMissingInRight.allObjects sortedArrayUsingSelector:@selector(compare:)]];
-
 }
 
 #pragma mark - NSTableViewDataSource

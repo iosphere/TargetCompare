@@ -130,19 +130,10 @@ NSString const *kUserDefaultsPathKey = @"ISHUserDefaultsPathKey";
 }
 
 - (void)checkSanityForProject:(XCProject *)aProject {
-    NSArray *filesWithAbsolutePath = [aProject.files filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL (id evaluatedObject, NSDictionary * bindings) {
-        return [[(XCSourceFile *) evaluatedObject pathRelativeToProjectRoot] isAbsolutePath];
-    }]];
-
-    NSArray *fileNames = nil;
-
-    if ([XCSourceFile instancesRespondToSelector:@selector(name)]) {
-        fileNames = [filesWithAbsolutePath valueForKey:@"name"];
-    }
-
+    NSArray *fileNames = [ISHTargetsComparisonController arrayWithAbolutePathsInProject:aProject];
     NSAlert *myAlert = nil;
 
-    if (filesWithAbsolutePath.count) {
+    if (fileNames.count) {
         myAlert = [NSAlert alertWithMessageText:@"Absolute paths in project" defaultButton:@"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:@"There are %lu files with absolute paths:\n%@", fileNames.count, [fileNames componentsJoinedByString:@"\n"]];
     } else {
         myAlert = [NSAlert alertWithMessageText:@"no absolute paths!" defaultButton:@"Cool" alternateButton:nil otherButton:nil informativeTextWithFormat:@"Yeehaa, looks good!"];

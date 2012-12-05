@@ -19,10 +19,14 @@
 @property (weak) IBOutlet NSTextField *rightTargetTitle;
 @property (weak) IBOutlet NSImageView *imageView;
 
+@property (strong) NSArray *membersMissingInTargetLeft;
+@property (strong) NSArray *membersMissingInTargetRight;
+
 @property (strong) XCTarget *targetLeft;
 @property (strong) XCTarget *targetRight;
 
++ (NSArray *)arrayWithAbolutePathsInProject:(XCProject *)proj;
 - (id)initWithLeftTarget:(XCTarget *)leftTarget rightTarget:(XCTarget *)rightTarget;
-
+- (void)startComparsion;
 - (void)showResults;
 @end
