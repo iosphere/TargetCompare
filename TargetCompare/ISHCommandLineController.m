@@ -13,21 +13,16 @@
 
 @implementation ISHCommandLineController
 
-- (int)start {
-    
-    if (![[NSFileManager defaultManager] fileExistsAtPath:self.projectPath]) {
-        ISHSimpleLog(@"No project at %@", self.projectPath);
-        return 1;
-    }
+- (int)startComparsion {
+    XCTarget *firstTarget = nil;
+    XCTarget *secondTarget = nil;
 
-    XCProject *project = [XCProject projectWithFilePath:self.projectPath];
+    XCProject *project = [self getCurrentProject];
+
     if (!project) {
         ISHSimpleLog(@"Cannot init project with %@", self.projectPath);
         return 1;
     }
-
-    XCTarget *firstTarget = nil;
-    XCTarget *secondTarget = nil;
 
     for (XCTarget *aTarget in project.targets) {
         if ([aTarget.name isEqualToString:self.firstTargetPath]) {
@@ -61,6 +56,87 @@
     ISHSimpleLog(@"%@", controller.membersMissingInTargetRight);
     
     return 0;
+}
+
+- (int)echoTargetList {
+    XCProject *project = [self getCurrentProject];
+
+    if (!project) {
+        ISHSimpleLog(@"Cannot init project with %@", self.projectPath);
+        return 1;
+    }
+
+    for (XCTarget *aTarget in project.targets) {
+        ISHSimpleLog(@"%@", aTarget.name);
+    }
+
+    return 0;
+}
+
+- (int)writePlistWithAllResultsToPath:(NSString *)path {
+    XCProject *project = [self getCurrentProject];
+
+    if (!project) {
+        ISHSimpleLog(@"Cannot init project with %@", self.projectPath);
+        return 1;
+    }
+
+    NSMutableArray *targets = [NSMutableArray new];
+    for (XCTarget *aTarget in project.targets) {
+        [targets addObject:aTarget.name];
+    }
+
+    NSMutableArray *helper = [targets mutableCopy];
+
+    NSMutableArray *targetsA = [NSMutableArray new];
+    NSMutableArray *targetsB = [NSMutableArray new];
+
+    for (NSString *aTarget in targets) {
+        NSString *currentTargetInHelper = nil;
+        for (NSString *aString in helper) {
+            if ([aString isEqualToString:aTarget]) {
+                currentTargetInHelper = aString;
+                break;
+            }
+        }
+        [helper removeObject:currentTargetInHelper];
+
+        for (NSString *aString in helper) {
+            [targetsA addObject:aTarget];
+            [targetsB addObject:aString];
+        }
+    }
+    
+    NSMutableDictionary *results = [NSMutableDictionary dictionary];
+
+    int i = 0;
+    for (NSString *targetLeft in targetsA) {
+        NSString *targetRight = [targetsB objectAtIndex:i];
+        
+        ISHTargetsComparisonController *controller = [[ISHTargetsComparisonController alloc] initWithLeftTarget:[project targetWithName:targetLeft] rightTarget:[project targetWithName:targetRight]];
+        [controller startComparsion];
+
+        [results setObject:@{
+                targetLeft : controller.membersMissingInTargetLeft,
+                targetRight: controller.membersMissingInTargetRight
+         } forKey:[NSString stringWithFormat:@"%@, %@", targetLeft, targetRight]];
+        i++;
+    }
+
+    [results writeToFile:path atomically:YES];
+
+
+    return 0;
+}
+
+- (XCProject *)getCurrentProject {
+    if (![[NSFileManager defaultManager] fileExistsAtPath:self.projectPath]) {
+        ISHSimpleLog(@"No project at %@", self.projectPath);
+        return nil;
+    }
+
+    XCProject *project = [XCProject projectWithFilePath:self.projectPath];
+    return project;
 }
 
 void ISHSimpleLog(NSString *format, ...) {

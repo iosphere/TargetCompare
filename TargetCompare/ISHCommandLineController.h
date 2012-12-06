@@ -14,6 +14,8 @@
 @property (strong) NSString *firstTargetPath;
 @property (strong) NSString *secondTargetPath;
 
-- (int)start;
+- (int)startComparsion;
+- (int)echoTargetList;
+- (int)writePlistWithAllResultsToPath:(NSString *)path;
 
 @end
