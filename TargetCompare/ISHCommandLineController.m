@@ -86,6 +86,9 @@
         [targets addObject:aTarget.name];
     }
 
+    NSArray *sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:nil ascending:YES selector:@selector(compare:)]];
+    [targets sortUsingDescriptors:sortDescriptors];
+    
     NSMutableArray *helper = [targets mutableCopy];
 
     NSMutableArray *targetsA = [NSMutableArray new];
@@ -110,36 +113,39 @@
     NSMutableDictionary *results = [NSMutableDictionary dictionary];
 
     int i = 0;
+    NSMutableString *sortedDiff = [NSMutableString new];
+    NSString *delim = @"#################\n";
+
     for (NSString *targetLeft in targetsA) {
         NSString *targetRight = [targetsB objectAtIndex:i];
-        
+        if ([targetLeft isEqualToString:targetRight]) {
+            continue;
+        }
+        [sortedDiff appendFormat:@"%@# targets: %@ - %@\n%@", delim, targetLeft, targetRight, delim];
+
         ISHTargetsComparisonController *controller = [[ISHTargetsComparisonController alloc] initWithLeftTarget:[project targetWithName:targetLeft] rightTarget:[project targetWithName:targetRight]];
         [controller startComparsion];
 
+        NSArray *missingLeft = [controller.membersMissingInTargetLeft sortedArrayUsingDescriptors:sortDescriptors]?:@[];
+        NSArray *missingRight = [controller.membersMissingInTargetRight sortedArrayUsingDescriptors:sortDescriptors]?:@[];
+        
         [results setObject:@{
-                targetLeft : controller.membersMissingInTargetLeft,
-                targetRight: controller.membersMissingInTargetRight
-         } forKey:[NSString stringWithFormat:@"%@, %@", targetLeft, targetRight]];
+                             targetLeft : missingLeft,
+                             targetRight: missingRight,
+                             }
+                    forKey:[NSString stringWithFormat:@"%@, %@", targetLeft, targetRight]];
+        
+        [sortedDiff appendFormat:@"%@# not in target: %@\n%@", delim, targetLeft, delim];
+        [sortedDiff appendString:[missingLeft componentsJoinedByString:@"\n"]];
+        [sortedDiff appendString:@"\n"];
+        [sortedDiff appendFormat:@"%@# not in target: %@\n%@", delim, targetRight, delim];
+        [sortedDiff appendString:[missingRight componentsJoinedByString:@"\n"]];
+        [sortedDiff appendString:@"\n"];
+
         i++;
     }
 
     [results writeToFile:path atomically:YES];
-
-
-    NSMutableString *sortedDiff = [NSMutableString new];
-    NSString *delim = @"#################\n";
-    for (NSString *key in [[results allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
-        [sortedDiff appendFormat:@"%@# targets: %@\n%@", delim, key, delim];
-        
-        NSDictionary *targetDict = [results objectForKey:key];
-        
-        for (NSString *target in [[targetDict allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
-            [sortedDiff appendFormat:@"%@# only in target: %@\n%@", delim, target, delim];
-            NSArray *diffs = [targetDict objectForKey:target];
-            [sortedDiff appendString:[[diffs sortedArrayUsingSelector:@selector(compare:)] componentsJoinedByString:@"\n"]];
-            [sortedDiff appendString:@"\n"];
-        }
-    }
     [sortedDiff writeToFile:[[path stringByDeletingPathExtension] stringByAppendingString:@"_sorted.txt"] atomically:YES encoding:NSUTF8StringEncoding error:nil];
     
     return 0;
