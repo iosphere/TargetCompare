@@ -126,6 +126,22 @@
     [results writeToFile:path atomically:YES];
 
 
+    NSMutableString *sortedDiff = [NSMutableString new];
+    NSString *delim = @"#################\n";
+    for (NSString *key in [[results allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
+        [sortedDiff appendFormat:@"%@# targets: %@\n%@", delim, key, delim];
+        
+        NSDictionary *targetDict = [results objectForKey:key];
+        
+        for (NSString *target in [[targetDict allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
+            [sortedDiff appendFormat:@"%@# only in target: %@\n%@", delim, target, delim];
+            NSArray *diffs = [targetDict objectForKey:target];
+            [sortedDiff appendString:[[diffs sortedArrayUsingSelector:@selector(compare:)] componentsJoinedByString:@"\n"]];
+            [sortedDiff appendString:@"\n"];
+        }
+    }
+    [sortedDiff writeToFile:[[path stringByDeletingPathExtension] stringByAppendingString:@"_sorted.txt"] atomically:YES encoding:NSUTF8StringEncoding error:nil];
+    
     return 0;
 }
 
